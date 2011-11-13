@@ -1,11 +1,35 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use 5.010;                      # // and say
+
 package
   dzil;
 use Dist::Zilla::App;
 # Let dzil --version know what to report:
 $main::VERSION = $Dist::Zilla::App::VERSION;
+
+unless (-e 'dist.ini') {
+  require Path::Class;
+
+  # dir() doesn't respect symlinks, but PWD does:
+  my $dir = Path::Class::dir($ENV{PWD} // '.')->absolute;
+
+  while (1) {
+    my $parent = $dir->parent;
+
+    last if $dir eq $parent;
+
+    if (-e $parent->file('dist.ini')) {
+      say "[DZ] found dist.ini in $parent";
+      chdir $parent or die "[DZ] failed to chdir $parent: $!";
+      $ENV{PWD} = "$parent";
+      last;
+    }
+
+    $dir = $parent;
+  } # while looking for dist.ini in parent directories
+} # end if don't have dist.ini in current directory
 
 # PODNAME:  dzil
 # ABSTRACT: do stuff with your dist
